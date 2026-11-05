@@ -1,0 +1,222 @@
+{
+  "theme": {
+    "mode": "light_first_with_rich_warmth",
+    "description": "Premium, modern, romantic, and Gen-Z friendly matchmaking experience. Designed with deep wine burgundy (#4A1224 & #2B0A15), warm dusty rose (#A3485E), soft blush pink (#FCEEF2), and warm ivory (#FAF6F0). No cartoon hearts, no AI slop, no excessive neon gradients — grounded in editorial intimacy, clean typography, tactile pill chips, and mobile-first micro-interactions with INR currency symbols (₹) and Indian UPI flows."
+  },
+  "typography": {
+    "headline_font": "Playfair Display Variable",
+    "body_font": "Plus Jakarta Sans Variable",
+    "mono_font": "JetBrains Mono Variable",
+    "font_imports": [
+      "@import \"@fontsource-variable/playfair-display\";",
+      "@import \"@fontsource-variable/plus-jakarta-sans\";",
+      "@import \"@fontsource-variable/jetbrains-mono\";"
+    ],
+    "scale_px": {
+      "display": 56,
+      "h1": 42,
+      "h2": 32,
+      "h3": 24,
+      "body": 16,
+      "caption": 14
+    },
+    "letter_spacing": {
+      "display": "tracking-tight",
+      "h1": "tracking-tight",
+      "h2": "tracking-tight",
+      "overline": "tracking-[0.18em]"
+    }
+  },
+  "colors": {
+    "primary_palette": {
+      "wine_deep": "#2B0A15",
+      "wine_burgundy": "#4A1224",
+      "wine_burgundy_hover": "#380D1B",
+      "dusty_rose": "#A3485E",
+      "dusty_rose_light": "#C87389",
+      "soft_blush": "#FCEEF2",
+      "blush_card": "#F7E6EC",
+      "warm_ivory": "#FAF6F0",
+      "warm_ivory_surface": "#FFFFFF",
+      "sand_border": "#E8DDD5",
+      "muted_charcoal": "#524449",
+      "charcoal_text": "#22181C"
+    },
+    "accent": "#4A1224",
+    "on_accent": "#FFFFFF",
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#FAF6F0",
+        "on_bg": "#22181C",
+        "on_bg_muted": "#524449",
+        "roles": {
+          "link": "#4A1224",
+          "error": "#9E1C38",
+          "success": "#1E6B48",
+          "warning": "#8F5000"
+        }
+      },
+      {
+        "name": "card_white",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#22181C",
+        "on_bg_muted": "#524449",
+        "roles": {
+          "link": "#4A1224",
+          "error": "#9E1C38",
+          "success": "#1E6B48"
+        }
+      },
+      {
+        "name": "card_blush",
+        "kind": "solid",
+        "bg": "#FCEEF2",
+        "on_bg": "#2B0A15",
+        "on_bg_muted": "#6E384A",
+        "roles": {
+          "link": "#4A1224",
+          "error": "#9E1C38",
+          "success": "#1E6B48"
+        }
+      },
+      {
+        "name": "hero_banner",
+        "kind": "solid",
+        "bg": "#2B0A15",
+        "on_bg": "#FAF6F0",
+        "on_bg_muted": "#D6C1CA",
+        "roles": {
+          "link": "#FCEEF2",
+          "error": "#FFA4B4",
+          "success": "#82E2B0"
+        }
+      },
+      {
+        "name": "admin_sidebar",
+        "kind": "solid",
+        "bg": "#1F0710",
+        "on_bg": "#FAF6F0",
+        "on_bg_muted": "#C2AAB4",
+        "roles": {
+          "link": "#FCEEF2",
+          "error": "#FFA4B4",
+          "success": "#82E2B0"
+        }
+      },
+      {
+        "name": "chip_active",
+        "kind": "solid",
+        "bg": "#4A1224",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#F3D5DE"
+      },
+      {
+        "name": "chip_inactive",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#22181C",
+        "on_bg_muted": "#6E5B63"
+      },
+      {
+        "name": "nav_glass",
+        "kind": "glass",
+        "contrast_against": "#FAF6F0",
+        "guarantee": "backdrop-blur-xl bg-[#FAF6F0]/85 border-b border-[#E8DDD5]",
+        "on_bg": "#22181C",
+        "on_bg_muted": "#524449",
+        "roles": {
+          "link": "#4A1224"
+        }
+      }
+    ]
+  },
+  "entry_surfaces": {
+    "/": "editorial hero with warm ivory backdrop, romantic typography & primary CTA left, paired with curated photo pill collage right",
+    "/register": "4-step romantic registration workflow with breadcrumb progress indicator, interactive pill selections, and photo upload",
+    "/payment": "clean UPI payment portal with dynamic QR card, copyable UPI ID, UTR input and screenshot upload proof",
+    "/status/:id": "private status lookup card with round progression timeline and verified match disclosure drawer",
+    "/admin/login": "focused split admin authentication screen with wine burgundy backdrop and secure credentials form",
+    "/admin": "desktop-first dual-pane admin command center with round metrics, applicant table, and 3-column matchmaking engine"
+  },
+  "layouts_and_grids": {
+    "mobile_first_strategy": "All public pages (Landing, Registration, Payment, Status, FAQ, Terms) must be hyper-responsive and optimized for 360px-430px mobile screens with sticky bottom CTA bar on mobile registration and large touch targets (min 44px height).",
+    "landing_page_structure": [
+      "Top sticky glass header with SoulMatch logo, How It Works, Rounds, FAQ, Instagram icon & 'Join Round' button",
+      "Hero section with headline 'Your Next Love Story Starts Here.', subtitle 'Meet someone who matches your vibe, values and personality.', live Round status pill with countdown/entries left, and primary CTA 'Join the Matchmaking Round'",
+      "Visual Social Proof / Editorial Highlights banner with subtle couple portraits and authentic testimonial quotes",
+      "How It Works: 5 intuitive numbered steps (1. Register & Photo, 2. Personality & Partner Vibe, 3. UPI Payment ₹, 4. Curated Matchmaking by Team, 5. Matches Unveiled via Email & Private Link)",
+      "Curated Personality Dimensions Showcase (Dating Vibe, Sunday Energy, Conflict Style, Shared Values)",
+      "Previous Round Highlights (Success stories & statistics if data exists, or 'Round 1 Launching Now' badge)",
+      "Transparent FAQ accordion (Privacy, curated human matching, payment verification, match delivery)",
+      "Footer with SoulMatch brand mark, Tagline 'Find Your Person.', Instagram handle link, Privacy Policy, Terms & Conditions, and Admin link"
+    ],
+    "admin_matchmaking_3_column": {
+      "desktop_layout": "Grid with 3 synchronized panels: Left (Applicants List with filters & round selector), Center (Active Selected Candidate profile & preferences deep-dive), Right (Candidate Match Pool with auto-calculated compatibility % breakdown, multi-select match assignment, email preview & manual copy trigger).",
+      "mobile_adaptation": "Tabbed view on small screens switching between 'Applicants', 'Profile', and 'Match Pool'."
+    }
+  },
+  "component_structure": {
+    "public_routes": [
+      {"path": "/", "component": "LandingPage.tsx", "title": "SoulMatch — Find Your Person"},
+      {"path": "/register", "component": "RegisterPage.tsx", "title": "Register for Matchmaking Round"},
+      {"path": "/payment/:id", "component": "PaymentPage.tsx", "title": "Complete UPI Payment"},
+      {"path": "/confirmation/:id", "component": "ConfirmationPage.tsx", "title": "Registration Confirmed"},
+      {"path": "/status/:id", "component": "ApplicantStatusPage.tsx", "title": "My SoulMatch Status"},
+      {"path": "/privacy", "component": "PrivacyPolicyPage.tsx", "title": "Privacy Policy"},
+      {"path": "/terms", "component": "TermsPage.tsx", "title": "Terms & Conditions"}
+    ],
+    "admin_routes": [
+      {"path": "/admin/login", "component": "AdminLoginPage.tsx", "title": "Admin Login"},
+      {"path": "/admin", "component": "AdminDashboardPage.tsx", "title": "Admin Command Center"},
+      {"path": "/admin/rounds", "component": "AdminRoundsPage.tsx", "title": "Matchmaking Rounds"},
+      {"path": "/admin/applicants", "component": "AdminApplicantsPage.tsx", "title": "Applicants Directory"},
+      {"path": "/admin/matchmaking", "component": "AdminMatchmakingPage.tsx", "title": "Curated Matchmaking Engine"},
+      {"path": "/admin/email-generator", "component": "AdminEmailGeneratorPage.tsx", "title": "Email Copy Generator"},
+      {"path": "/admin/settings", "component": "AdminSettingsPage.tsx", "title": "Platform & UPI Settings"}
+    ]
+  },
+  "image_urls": {
+    "hero_couple": {
+      "url": "https://images.unsplash.com/photo-1644446770253-5c6b45c38ba8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwzfHxyb21hbnRpYyUyMGNvdXBsZSUyMGNhZmUlMjBkYXRlfGVufDB8fHx8MTc5Mzg4NjczN3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Young romantic couple having coffee date at a charming cafe, natural warm tones"
+    },
+    "story_couple_1": {
+      "url": "https://images.unsplash.com/photo-1553478124-633048459a83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHw0fHxyb21hbnRpYyUyMGNvdXBsZSUyMGNhZmUlMjBkYXRlfGVufDB8fHx8MTc5Mzg4NjczN3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Couple sharing an intimate conversation over dinner"
+    },
+    "story_couple_2": {
+      "url": "https://images.unsplash.com/photo-1763739906424-757c3635e3e9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwzfHx5b3VuZyUyMGNvdXBsZSUyMHNtaWxpbmclMjBoYXBweSUyMG91dGRvb3J8ZW58MHx8fHwxNzkzODg2NzM3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Smiling young couple outdoors in park with flowers, vibrant Gen-Z vibe"
+    },
+    "sunset_couple": {
+      "url": "https://images.unsplash.com/photo-1575388104683-e076ee9ccaa0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwyfHxyb21hbnRpYyUyMGNvdXBsZSUyMHN1bnNldCUyMHdhbGtpbmd8ZW58MHx8fHwxNzkzODg2NzM3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Romantic couple walking holding hands at golden hour beach"
+    }
+  },
+  "motion_and_interactions": {
+    "principles": [
+      "Subtle micro-interactions on button hover and chip clicks (spring 0.15s ease).",
+      "Step transition in multi-step registration with horizontal slide fade.",
+      "Compatibility match score gauge with smooth circular progress counter (0 to 100%).",
+      "Copy-to-clipboard toast notifications with Sonner rich colors.",
+      "Avoid heavy 3D canvases to keep initial mobile load lightning fast and instant on mobile browsers."
+    ]
+  },
+  "accessibility": {
+    "wcag_compliance": "All normal text tokens maintain >= 4.5:1 contrast against light and dark surfaces. Form inputs include explicit labels and focus rings with wine burgundy glow. Chips toggle aria-pressed or aria-checked.",
+    "data_testids": "All buttons, inputs, tabs, modal triggers, and status badges MUST carry distinct data-testid attributes (e.g. data-testid='register-step-1-submit', data-testid='upi-utr-input', data-testid='admin-match-assign-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Follow the wine burgundy (#4A1224) and warm ivory (#FAF6F0) brand palette consistently across frontend and backend.",
+    "Registration must be a pleasant 4-step wizard with local state persistence so applicants don't lose data on back navigation.",
+    "Support INR (₹) pricing format for registration rounds (e.g. ₹199 / ₹299).",
+    "UPI Payment screen must support manual UTR entering, screenshot upload (base64 or local upload API), and copy UPI ID button with instant toast.",
+    "Applicant Status page must be accessible via unguessable ID link (e.g. /status/:id or /status?app_id=SM-...) without requiring a password/login.",
+    "Admin Matchmaking Dashboard is the crown jewel: render the 3-panel workflow with compatibility score breakdown (Vibe match, Values match, Intention alignment), multi-select assignment, and one-click 'Copy HTML / Plain Text Email' with 'Mark as Sent' logger.",
+    "Include pre-seeded sample applicants, rounds, and admin credentials (admin@soulmatch.in / admin123) in backend seed.py so the app is instantly testable and vibrant.",
+    "Add Instagram link support, Privacy Policy, Terms, and customizable UPI QR / UPI ID in Admin Settings."
+  ]
+}
