@@ -9,7 +9,18 @@ export const DATING_VIBES = ["Gen Z", "Old School", "Hopeless Romantic", "Casual
 export const LIFESTYLES = [
   "Party Lover", "Fitness Enthusiast", "Book Lover", "Traveller", "Movie Buff", "Music Lover", "Gamer", "Food Explorer",
 ];
-export const INTENTIONS = ["Serious Relationship", "Getting to Know Someone", "Friendship First", "Open to Connections"];
+export const INTENTIONS = ["Serious Relationship", "Getting to Know Someone", "Friendship First", "Open to Connections", "Hookup"];
+
+export interface QuestionCfg { title: string; hint: string; options: string[] }
+export type QuestionKey = "personality" | "qualities" | "vibe" | "lifestyle" | "intention";
+// Fallback only — the live wording/options come from /public/form (editable by the admin).
+export const DEFAULT_QUESTIONS: Record<QuestionKey, QuestionCfg> = {
+  personality: { title: "Personality", hint: "", options: [...PERSONALITIES] },
+  qualities: { title: "Choose your qualities", hint: "Pick as many as feel like you", options: [...QUALITIES] },
+  vibe: { title: "Dating vibe", hint: "", options: [...DATING_VIBES] },
+  lifestyle: { title: "Lifestyle", hint: "Select all that apply", options: [...LIFESTYLES] },
+  intention: { title: "Relationship type", hint: "What are you looking for?", options: [...INTENTIONS] },
+};
 
 export const PAYMENT_LABEL: Record<string, string> = {
   pending: "Pending Verification",

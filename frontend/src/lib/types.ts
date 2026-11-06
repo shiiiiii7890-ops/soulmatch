@@ -1,6 +1,18 @@
 // Mirrors backend/models/schemas.py — keep in sync by hand.
 export type Gender = "Male" | "Female" | "Non-binary" | "Other";
-export type Personality = "Introvert" | "Extrovert" | "Ambivert";
+export type Personality = string; // options are admin-editable
+export interface QuestionCfg {
+  title: string;
+  hint: string;
+  options: string[];
+}
+export interface Questions {
+  personality: QuestionCfg;
+  qualities: QuestionCfg;
+  vibe: QuestionCfg;
+  lifestyle: QuestionCfg;
+  intention: QuestionCfg;
+}
 export type PaymentStatus = "pending" | "verified" | "rejected";
 export type EmailStatus = "no_matches" | "pending" | "sent";
 
@@ -19,6 +31,7 @@ export interface PublicForm {
   upi_id: string;
   payee_name: string;
   has_qr: boolean;
+  questions: Questions;
 }
 export interface Preferences {
   surprise_me: boolean;
@@ -58,8 +71,8 @@ export interface ProfileFields {
 }
 export interface ApplicationIn extends ProfileFields {
   photo_id: string;
-  utr: string;
-  screenshot_id: string;
+  utr?: string; // not needed for women (free entry)
+  screenshot_id?: string;
   consent_accurate: true;
   consent_matchmaking: true;
   consent_share_contact: true;
@@ -84,6 +97,7 @@ export interface Application extends ProfileFields {
 }
 export interface ApplicationCreated {
   app_code: string;
+  free_entry: boolean;
 }
 export interface UploadOut {
   file_id: string;
