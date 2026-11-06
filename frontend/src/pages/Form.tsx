@@ -13,8 +13,9 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { SimpleSelect, toOpts } from "@/components/SimpleSelect";
 import { apiPost, errMsg } from "@/lib/api";
 import { copyText, usePublicForm } from "@/lib/hooks";
-import { DATING_VIBES, GENDERS, INTENTIONS, LIFESTYLES, PERSONALITIES, QUALITIES, inr } from "@/lib/options";
-import type { ApplicationCreated, ApplicationIn, Gender, Personality, Preferences } from "@/lib/types";
+import { DEFAULT_QUESTIONS, GENDERS, inr } from "@/lib/options";
+import { FEET, HEIGHT_RANGE_OPTIONS, INCHES, cmToFtIn, fmtFtIn, fmtHeight, ftInToCm } from "@/lib/height";
+import type { ApplicationCreated, ApplicationIn, Gender, Preferences } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Draft {
@@ -32,25 +33,30 @@ const EMPTY: Draft = {
   city: "", hometown: "", instagram: "", religion: "", share_religion: false,
   personality: "", qualities: [], dating_vibe: "", lifestyle: [], intention: "",
   preferences: {
-    surprise_me: false, genders: [], age_min: 18, age_max: 30, height_min: 150, height_max: 195, personalities: [],
+    surprise_me: false, genders: [], age_min: 18, age_max: 30, height_min: 150, height_max: 196, personalities: [],
     qualities: [], vibes: [], lifestyles: [], intentions: [], college: "", location: "",
   },
   utr: "", screenshot_id: null,
   c1: false, c2: false, c3: false,
 };
-const KEY = "soulmatch-draft-v1";
-const STEPS = ["Basic details", "About you", "Ideal partner", "Payment", "Review"];
-const TITLES = ["Let's start with you.", "Describe yourself.", "Your ideal partner.", "Registration payment.", "Review & submit."];
+const KEY = "soulmatch-draft-v2";
+type StepId = "basic" | "about" | "partner" | "payment" | "review";
+const ALL_STEPS: { id: StepId; label: string; title: string }[] = [
+  { id: "basic", label: "Basic details", title: "Let's start with you." },
+  { id: "about", label: "About you", title: "Describe yourself." },
+  { id: "partner", label: "Ideal partner", title: "Your ideal partner." },
+  { id: "payment", label: "Payment", title: "Registration payment." },
+  { id: "review", label: "Review", title: "Review & submit." },
+];
 const AGES = Array.from({ length: 23 }, (_, i) => String(18 + i));
-const HEIGHTS = Array.from({ length: 15 }, (_, i) => String(140 + i * 5));
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MOBILE_RE = /^(\+?91)?[6-9]\d{9}$/;
 
 type Errors = Record<string, string>;
 
-function validate(step: number, d: Draft): Errors {
+function validate(step: StepId, d: Draft): Errors {
   const e: Errors = {};
-  if (step === 0) {
+  if (step === "basic") {
     if (d.full_name.trim().length < 2) e.full_name = "Enter your full name";
     const age = Number(d.age);
     if (!d.age || Number.isNaN(age)) e.age = "Enter your age";
@@ -58,31 +64,31 @@ function validate(step: number, d: Draft): Errors {
     else if (age > 99) e.age = "Enter a valid age";
     if (!d.gender) e.gender = "Select your gender";
     const h = Number(d.height_cm);
-    if (!h || h < 120 || h > 230) e.height_cm = "Height in cm (120–230)";
+    if (!h || h < 120 || h > 230) e.height_cm = `Select your height (between ${fmtFtIn(120)} and ${fmtFtIn(230)})`;
     if (!MOBILE_RE.test(d.mobile.replace(/[\s-]/g, ""))) e.mobile = "Enter a valid 10-digit mobile number";
     if (!EMAIL_RE.test(d.email.trim())) e.email = "Enter a valid email address";
     if (!d.photo_id) e.photo_id = "Upload a profile photo";
     for (const k of ["college", "course", "city", "hometown"] as const) if (!d[k].trim()) e[k] = "Required";
     if (!/^@?[A-Za-z0-9._]{1,30}$/.test(d.instagram.trim())) e.instagram = "Enter a valid Instagram username";
   }
-  if (step === 1) {
+  if (step === "about") {
     if (!d.personality) e.personality = "Pick one";
     if (!d.qualities.length) e.qualities = "Pick at least one quality";
     if (!d.dating_vibe) e.dating_vibe = "Pick your vibe";
     if (!d.lifestyle.length) e.lifestyle = "Pick at least one";
     if (!d.intention) e.intention = "Pick one";
   }
-  if (step === 2) {
+  if (step === "partner") {
     const p = d.preferences;
     if (!p.surprise_me && !p.genders.length) e.genders = "Choose a preferred gender, or pick 'surprise me'";
     if (p.age_min > p.age_max) e.age_range = "Minimum age can't be above maximum";
     if (p.height_min > p.height_max) e.height_range = "Minimum height can't be above maximum";
   }
-  if (step === 3) {
+  if (step === "payment") {
     if (!d.screenshot_id) e.screenshot_id = "Upload your payment screenshot";
     if (!/^[A-Za-z0-9]{6,30}$/.test(d.utr.trim())) e.utr = "Enter the UTR / transaction reference (6–30 letters or digits)";
   }
-  if (step === 4 && !(d.c1 && d.c2 && d.c3)) e.consent = "Please confirm all three to continue";
+  if (step === "review" && !(d.c1 && d.c2 && d.c3)) e.consent = "Please confirm all three to continue";
   return e;
 }
 
@@ -135,6 +141,8 @@ function ReviewBlock({ title, rows, onEdit, testId }: { title: string; rows: [st
 export default function Register() {
   const { data: cfg, isLoading } = usePublicForm();
   const [done, setDone] = useState<string | null>(null);
+  const [doneFree, setDoneFree] = useState(false);
+  const [hUnit, setHUnit] = useState<"ft" | "cm">("ft");
   const [shotUrl, setShotUrl] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
@@ -152,6 +160,30 @@ export default function Register() {
     localStorage.setItem(KEY, JSON.stringify(d));
   }, [d]);
 
+  // Admin can edit the questions/options; drop any saved answer that is no longer offered.
+  const Q = cfg?.questions ?? DEFAULT_QUESTIONS;
+  useEffect(() => {
+    if (!cfg?.questions) return;
+    const q = cfg.questions;
+    const keep = (vals: string[], opts: string[]) => vals.filter((v) => opts.includes(v));
+    setD((p) => ({
+      ...p,
+      personality: q.personality.options.includes(p.personality) ? p.personality : "",
+      dating_vibe: q.vibe.options.includes(p.dating_vibe) ? p.dating_vibe : "",
+      intention: q.intention.options.includes(p.intention) ? p.intention : "",
+      qualities: keep(p.qualities, q.qualities.options),
+      lifestyle: keep(p.lifestyle, q.lifestyle.options),
+      preferences: {
+        ...p.preferences,
+        personalities: keep(p.preferences.personalities, q.personality.options),
+        qualities: keep(p.preferences.qualities, q.qualities.options),
+        vibes: keep(p.preferences.vibes, q.vibe.options),
+        lifestyles: keep(p.preferences.lifestyles, q.lifestyle.options),
+        intentions: keep(p.preferences.intentions, q.intention.options),
+      },
+    }));
+  }, [cfg?.questions]);
+
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
   const setPref = <K extends keyof Preferences>(k: K, v: Preferences[K]) => setD((p) => ({ ...p, preferences: { ...p.preferences, [k]: v } }));
 
@@ -160,10 +192,19 @@ export default function Register() {
     onSuccess: (res) => {
       localStorage.removeItem(KEY);
       setDone(res.app_code);
+      setDoneFree(res.free_entry);
       window.scrollTo({ top: 0 });
     },
     onError: (e) => toast.error(errMsg(e)),
   });
+
+  // Registration is free for women, so the payment step is skipped for them.
+  const isFree = d.gender === "Female";
+  const steps = ALL_STEPS.filter((s) => s.id !== "payment" || !isFree);
+  const stepIdx = Math.min(step, steps.length - 1);
+  const cur = steps[stepIdx];
+  const isLast = stepIdx === steps.length - 1;
+  const goTo = (id: StepId) => go(steps.findIndex((s) => s.id === id));
 
   const go = (to: number) => {
     setErrors({});
@@ -171,23 +212,27 @@ export default function Register() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const next = () => {
-    const e = validate(step, d);
+    const e = validate(cur.id, d);
     setErrors(e);
     if (Object.keys(e).length) {
       toast.error("Please fix the highlighted fields");
       return;
     }
-    if (step < 4) return go(step + 1);
+    if (!isLast) return go(stepIdx + 1);
     submit.mutate({
-      utr: d.utr.trim().toUpperCase(), screenshot_id: d.screenshot_id ?? "", full_name: d.full_name.trim(), age: Number(d.age), gender: d.gender as Gender,
+      ...(isFree ? {} : { utr: d.utr.trim().toUpperCase(), screenshot_id: d.screenshot_id ?? "" }), full_name: d.full_name.trim(), age: Number(d.age), gender: d.gender as Gender,
       height_cm: Number(d.height_cm), mobile: d.mobile.trim(), email: d.email.trim(), photo_id: d.photo_id ?? "",
       college: d.college.trim(), course: d.course.trim(), city: d.city.trim(), hometown: d.hometown.trim(),
       instagram: d.instagram.trim(), religion: d.religion.trim(), share_religion: d.share_religion && !!d.religion.trim(),
-      personality: d.personality as Personality, qualities: d.qualities, dating_vibe: d.dating_vibe,
+      personality: d.personality, qualities: d.qualities, dating_vibe: d.dating_vibe,
       lifestyle: d.lifestyle, intention: d.intention, preferences: d.preferences,
       consent_accurate: true, consent_matchmaking: true, consent_share_contact: true,
     });
   };
+
+  const hv = Number(d.height_cm);
+  const hParts = hv >= 120 && hv <= 230 ? cmToFtIn(hv) : null;
+  const setFtIn = (ft: string, inch: string) => set("height_cm", ft ? String(ftInToCm(Number(ft), Number(inch || 0))) : "");
 
   const p = d.preferences;
   const closed = !isLoading && !cfg?.open;
@@ -203,14 +248,14 @@ export default function Register() {
         {!closed && !done && (
           <div className="mx-auto max-w-3xl px-5 pb-4" data-testid="register-progress">
             <div className="flex gap-2">
-              {STEPS.map((s, i) => (
-                <div key={s} className="flex-1">
-                  <div className={cn("h-1.5 rounded-full transition-[background-color] duration-300", i <= step ? "bg-wine" : "bg-sand")} />
-                  <p className={cn("mt-1.5 hidden text-[11px] sm:block", i === step ? "font-semibold text-wine" : "text-ink-muted")}>{i + 1}. {s}</p>
+              {steps.map((s, i) => (
+                <div key={s.id} className="flex-1">
+                  <div className={cn("h-1.5 rounded-full transition-[background-color] duration-300", i <= stepIdx ? "bg-wine" : "bg-sand")} />
+                  <p className={cn("mt-1.5 hidden text-[11px] sm:block", i === stepIdx ? "font-semibold text-wine" : "text-ink-muted")}>{i + 1}. {s.label}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-ink-muted sm:hidden" data-testid="register-step-label">Step {step + 1} of 5 · {STEPS[step]}</p>
+            <p className="mt-2 text-xs text-ink-muted sm:hidden" data-testid="register-step-label">Step {stepIdx + 1} of {steps.length} · {cur.label}</p>
           </div>
         )}
       </header>
@@ -224,7 +269,11 @@ export default function Register() {
             <h1 className="mt-4 text-3xl tracking-tight sm:text-4xl">You're officially in! Your SoulMatch journey starts now.</h1>
             <p className="mt-4 text-[#D6C1CA]">Your application ID</p>
             <p className="mt-1 font-mono text-2xl font-semibold" data-testid="register-done-app-code">{done}</p>
-            <p className="mx-auto mt-5 max-w-md text-sm text-[#D6C1CA]">Payment status: <span className="font-semibold text-ivory" data-testid="register-done-payment-status">Pending verification</span>. Our team will verify your payment manually and email your matches once results are out.</p>
+            <p className="mx-auto mt-5 max-w-md text-sm text-[#D6C1CA]">{doneFree ? (
+                <>Registration is <span className="font-semibold text-ivory" data-testid="register-done-payment-status">free for women</span> — no payment needed. Our team will email your matches once results are out.</>
+              ) : (
+                <>Payment status: <span className="font-semibold text-ivory" data-testid="register-done-payment-status">Pending verification</span>. Our team will verify your payment manually and email your matches once results are out.</>
+              )}</p>
             <p className="mx-auto mt-4 max-w-md text-xs text-[#C2AAB4]">We don't keep your data after this round's results are declared — if you join the next round, you'll need to fill in your details again.</p>
           </div>
         ) : closed ? (
@@ -235,17 +284,17 @@ export default function Register() {
         ) : (
           <>
             <div className="mb-6">
-              <p className="overline text-rose">SoulMatch registration · {inr(fee)}</p>
-              <h1 className="mt-2 text-3xl tracking-tight text-wine-deep sm:text-4xl">{TITLES[step]}</h1>
+              <p className="overline text-rose">SoulMatch registration · {isFree ? "Free for women" : inr(fee)}</p>
+              <h1 className="mt-2 text-3xl tracking-tight text-wine-deep sm:text-4xl">{cur.title}</h1>
             </div>
-            {step === 0 && (
+            {cur.id === "basic" && (
               <p className="mb-6 flex gap-2 rounded-2xl bg-blush p-4 text-sm text-plum-muted" data-testid="register-data-notice">
                 <Info className="mt-0.5 size-4 shrink-0" /> We don't keep your data after a round's results are declared. If you take part in the next round, you'll need to fill in your details again.
               </p>
             )}
             <AnimatePresence mode="wait">
-              <motion.div key={step} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.25 }}>
-                {step === 0 && (
+              <motion.div key={cur.id} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.25 }}>
+                {cur.id === "basic" && (
                   <div className="space-y-6 rounded-[1.75rem] border border-sand bg-white p-5 sm:p-8" data-testid="register-step-1">
                     <ImageUpload
                       endpoint="/public/upload?kind=photo" fileId={d.photo_id} previewUrl={photoUrl} round testId="photo-upload"
@@ -261,9 +310,22 @@ export default function Register() {
                         <Field label="Age" id="age" error={errors.age}>
                           <Input id="age" inputMode="numeric" className="h-11 bg-white" value={d.age} onChange={(e) => set("age", e.target.value.replace(/\D/g, "").slice(0, 2))} data-testid="input-age" />
                         </Field>
-                        <Field label="Height (cm)" id="height_cm" error={errors.height_cm}>
-                          <Input id="height_cm" inputMode="numeric" placeholder="e.g. 168" className="h-11 bg-white" value={d.height_cm} onChange={(e) => set("height_cm", e.target.value.replace(/\D/g, "").slice(0, 3))} data-testid="input-height" />
-                        </Field>
+                        <div className="col-span-2 sm:col-span-1">
+                          <Field label={hUnit === "ft" ? "Height (ft / in)" : "Height (cm)"} id="height_cm" error={errors.height_cm}>
+                            {hUnit === "ft" ? (
+                              <div className="flex items-center gap-2">
+                                <SimpleSelect value={hParts ? String(hParts.ft) : ""} onChange={(v) => setFtIn(v, hParts ? String(hParts.inch) : "0")} options={toOpts(FEET)} placeholder="ft" testId="select-height-ft" className="h-11" />
+                                <SimpleSelect value={hParts ? String(hParts.inch) : ""} onChange={(v) => setFtIn(hParts ? String(hParts.ft) : "5", v)} options={toOpts(INCHES)} placeholder="in" testId="select-height-in" className="h-11" />
+                              </div>
+                            ) : (
+                              <Input id="height_cm" inputMode="numeric" placeholder="e.g. 168" className="h-11 bg-white" value={d.height_cm} onChange={(e) => set("height_cm", e.target.value.replace(/\D/g, "").slice(0, 3))} data-testid="input-height" />
+                            )}
+                          </Field>
+                          <button type="button" onClick={() => setHUnit(hUnit === "ft" ? "cm" : "ft")} className="mt-1 text-xs font-semibold text-wine" data-testid="height-unit-toggle">
+                            {hUnit === "ft" ? "Enter in cm instead" : "Enter in feet & inches instead"}
+                          </button>
+                          {hParts && <p className="text-[11px] text-ink-muted">{fmtHeight(d.height_cm)}</p>}
+                        </div>
                       </div>
                       <Field label="Gender" id="gender" error={errors.gender}>
                         <ChipGroup options={GENDERS} value={d.gender ? [d.gender as Gender] : []} onChange={(v) => set("gender", v[0] ?? "")} multiple={false} testId="chips-gender" />
@@ -300,27 +362,27 @@ export default function Register() {
                   </div>
                 )}
 
-                {step === 1 && (
+                {cur.id === "about" && (
                   <div className="space-y-8 rounded-[1.75rem] border border-sand bg-white p-5 sm:p-8" data-testid="register-step-2">
-                    <Section title="Personality" error={errors.personality}>
-                      <ChipGroup options={PERSONALITIES} value={d.personality ? [d.personality as Personality] : []} onChange={(v) => set("personality", v[0] ?? "")} multiple={false} testId="chips-personality" />
+                    <Section title={Q.personality.title} hint={Q.personality.hint || undefined} error={errors.personality}>
+                      <ChipGroup options={Q.personality.options} value={d.personality ? [d.personality] : []} onChange={(v) => set("personality", v[0] ?? "")} multiple={false} testId="chips-personality" />
                     </Section>
-                    <Section title="Choose your qualities" hint="Pick as many as feel like you" error={errors.qualities}>
-                      <ChipGroup options={QUALITIES} value={d.qualities} onChange={(v) => set("qualities", v)} testId="chips-qualities" />
+                    <Section title={Q.qualities.title} hint={Q.qualities.hint || undefined} error={errors.qualities}>
+                      <ChipGroup options={Q.qualities.options} value={d.qualities} onChange={(v) => set("qualities", v)} testId="chips-qualities" />
                     </Section>
-                    <Section title="Dating vibe" error={errors.dating_vibe}>
-                      <ChipGroup options={DATING_VIBES} value={d.dating_vibe ? [d.dating_vibe] : []} onChange={(v) => set("dating_vibe", v[0] ?? "")} multiple={false} testId="chips-vibe" />
+                    <Section title={Q.vibe.title} hint={Q.vibe.hint || undefined} error={errors.dating_vibe}>
+                      <ChipGroup options={Q.vibe.options} value={d.dating_vibe ? [d.dating_vibe] : []} onChange={(v) => set("dating_vibe", v[0] ?? "")} multiple={false} testId="chips-vibe" />
                     </Section>
-                    <Section title="Lifestyle" hint="Select all that apply" error={errors.lifestyle}>
-                      <ChipGroup options={LIFESTYLES} value={d.lifestyle} onChange={(v) => set("lifestyle", v)} testId="chips-lifestyle" />
+                    <Section title={Q.lifestyle.title} hint={Q.lifestyle.hint || undefined} error={errors.lifestyle}>
+                      <ChipGroup options={Q.lifestyle.options} value={d.lifestyle} onChange={(v) => set("lifestyle", v)} testId="chips-lifestyle" />
                     </Section>
-                    <Section title="Relationship intention" error={errors.intention}>
-                      <ChipGroup options={INTENTIONS} value={d.intention ? [d.intention] : []} onChange={(v) => set("intention", v[0] ?? "")} multiple={false} testId="chips-intention" />
+                    <Section title={Q.intention.title} hint={Q.intention.hint || undefined} error={errors.intention}>
+                      <ChipGroup options={Q.intention.options} value={d.intention ? [d.intention] : []} onChange={(v) => set("intention", v[0] ?? "")} multiple={false} testId="chips-intention" />
                     </Section>
                   </div>
                 )}
 
-                {step === 2 && (
+                {cur.id === "partner" && (
                   <div className="space-y-8 rounded-[1.75rem] border border-sand bg-white p-5 sm:p-8" data-testid="register-step-3">
                     <label className={cn("flex cursor-pointer items-center gap-3 rounded-2xl border px-5 py-4 transition-colors", p.surprise_me ? "border-wine bg-blush" : "border-sand")}>
                       <Checkbox checked={p.surprise_me} onCheckedChange={(v) => setPref("surprise_me", !!v)} data-testid="checkbox-surprise-me" />
@@ -340,26 +402,26 @@ export default function Register() {
                           <SimpleSelect value={String(p.age_max)} onChange={(v) => setPref("age_max", Number(v))} options={toOpts(AGES)} testId="select-pref-age-max" />
                         </div>
                       </Section>
-                      <Section title="Preferred height range (cm)" error={errors.height_range}>
+                      <Section title="Preferred height range" error={errors.height_range}>
                         <div className="flex items-center gap-2">
-                          <SimpleSelect value={String(p.height_min)} onChange={(v) => setPref("height_min", Number(v))} options={toOpts(HEIGHTS)} testId="select-pref-height-min" />
+                          <SimpleSelect value={String(p.height_min)} onChange={(v) => setPref("height_min", Number(v))} options={HEIGHT_RANGE_OPTIONS} testId="select-pref-height-min" />
                           <span className="text-ink-muted">to</span>
-                          <SimpleSelect value={String(p.height_max)} onChange={(v) => setPref("height_max", Number(v))} options={toOpts(HEIGHTS)} testId="select-pref-height-max" />
+                          <SimpleSelect value={String(p.height_max)} onChange={(v) => setPref("height_max", Number(v))} options={HEIGHT_RANGE_OPTIONS} testId="select-pref-height-max" />
                         </div>
                       </Section>
                     </div>
                     <Section title="Preferred personality traits" hint="Personality type and qualities you're drawn to">
-                      <ChipGroup options={PERSONALITIES} value={p.personalities} onChange={(v) => setPref("personalities", v)} testId="chips-pref-personality" />
-                      <ChipGroup options={QUALITIES} value={p.qualities} onChange={(v) => setPref("qualities", v)} testId="chips-pref-qualities" />
+                      <ChipGroup options={Q.personality.options} value={p.personalities} onChange={(v) => setPref("personalities", v)} testId="chips-pref-personality" />
+                      <ChipGroup options={Q.qualities.options} value={p.qualities} onChange={(v) => setPref("qualities", v)} testId="chips-pref-qualities" />
                     </Section>
                     <Section title="Preferred dating vibe">
-                      <ChipGroup options={DATING_VIBES} value={p.vibes} onChange={(v) => setPref("vibes", v)} testId="chips-pref-vibe" />
+                      <ChipGroup options={Q.vibe.options} value={p.vibes} onChange={(v) => setPref("vibes", v)} testId="chips-pref-vibe" />
                     </Section>
                     <Section title="Preferred lifestyle">
-                      <ChipGroup options={LIFESTYLES} value={p.lifestyles} onChange={(v) => setPref("lifestyles", v)} testId="chips-pref-lifestyle" />
+                      <ChipGroup options={Q.lifestyle.options} value={p.lifestyles} onChange={(v) => setPref("lifestyles", v)} testId="chips-pref-lifestyle" />
                     </Section>
-                    <Section title="Preferred relationship intentions">
-                      <ChipGroup options={INTENTIONS} value={p.intentions} onChange={(v) => setPref("intentions", v)} testId="chips-pref-intention" />
+                    <Section title="Preferred relationship type">
+                      <ChipGroup options={Q.intention.options} value={p.intentions} onChange={(v) => setPref("intentions", v)} testId="chips-pref-intention" />
                     </Section>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field label="Preferred college / university" id="pref_college" optional>
@@ -372,7 +434,7 @@ export default function Register() {
                   </div>
                 )}
 
-                {step === 3 && (
+                {cur.id === "payment" && (
                   <div className="grid gap-5 md:grid-cols-[1fr_1.1fr]" data-testid="register-step-payment">
                     <div className="rounded-[1.75rem] bg-wine-deep p-6 text-ivory" data-testid="payment-qr-card">
                       <div className="flex items-baseline justify-between">
@@ -414,25 +476,32 @@ export default function Register() {
                   </div>
                 )}
 
-                {step === 4 && (
+                {cur.id === "review" && (
                   <div className="space-y-4" data-testid="register-step-4">
                     <ReviewBlock title="Basic details" testId="review-basic" onEdit={() => go(0)} rows={[
-                      ["Name", d.full_name], ["Age", d.age], ["Gender", d.gender], ["Height", d.height_cm ? `${d.height_cm} cm` : ""],
+                      ["Name", d.full_name], ["Age", d.age], ["Gender", d.gender], ["Height", fmtHeight(d.height_cm)],
                       ["Mobile", d.mobile], ["Email", d.email], ["College", d.college], ["Course", d.course], ["City", d.city],
                       ["Hometown", d.hometown], ["Instagram", d.instagram ? "@" + d.instagram.replace(/^@/, "") : ""],
                       ["Religion", d.religion ? `${d.religion}${d.share_religion ? " (shared with matches)" : " (private)"}` : ""],
                       ["Photo", d.photo_id ? "Uploaded ✓" : ""],
                     ]} />
-                    <ReviewBlock title="Payment" testId="review-payment" onEdit={() => go(3)} rows={[
-                      ["Fee", inr(fee)], ["UTR", d.utr.toUpperCase()], ["Screenshot", d.screenshot_id ? "Uploaded ✓" : ""],
-                    ]} />
+                    {isFree ? (
+                      <div className="rounded-2xl border border-sand bg-white p-5 text-sm text-ink" data-testid="review-free-entry">
+                        <h3 className="font-display text-lg text-wine-deep">Payment</h3>
+                        <p className="mt-1 text-ink-muted">Registration is free for women — nothing to pay.</p>
+                      </div>
+                    ) : (
+                      <ReviewBlock title="Payment" testId="review-payment" onEdit={() => goTo("payment")} rows={[
+                        ["Fee", inr(fee)], ["UTR", d.utr.toUpperCase()], ["Screenshot", d.screenshot_id ? "Uploaded ✓" : ""],
+                      ]} />
+                    )}
                     <ReviewBlock title="About you" testId="review-about" onEdit={() => go(1)} rows={[
                       ["Personality", d.personality], ["Dating vibe", d.dating_vibe], ["Qualities", d.qualities.join(", ")],
                       ["Lifestyle", d.lifestyle.join(", ")], ["Intention", d.intention],
                     ]} />
                     <ReviewBlock title="Ideal partner" testId="review-partner" onEdit={() => go(2)} rows={[
                       ["Surprise me", p.surprise_me ? "Yes" : "No"], ["Gender", p.genders.join(", ")],
-                      ["Age range", `${p.age_min}–${p.age_max}`], ["Height range", `${p.height_min}–${p.height_max} cm`],
+                      ["Age range", `${p.age_min}–${p.age_max}`], ["Height range", `${fmtFtIn(p.height_min)} – ${fmtFtIn(p.height_max)}`],
                       ["Personality", p.personalities.join(", ")], ["Qualities", p.qualities.join(", ")],
                       ["Dating vibe", p.vibes.join(", ")], ["Lifestyle", p.lifestyles.join(", ")],
                       ["Intentions", p.intentions.join(", ")], ["College", p.college], ["Location", p.location],
@@ -462,12 +531,12 @@ export default function Register() {
       {!closed && !isLoading && !done && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-ivory/95 backdrop-blur-xl">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3">
-            <Button variant="ghost" className="h-12 rounded-full px-5" disabled={step === 0} onClick={() => go(step - 1)} data-testid="register-back-button">
+            <Button variant="ghost" className="h-12 rounded-full px-5" disabled={stepIdx === 0} onClick={() => go(stepIdx - 1)} data-testid="register-back-button">
               <ArrowLeft className="size-4" /> Back
             </Button>
-            <Button className="h-12 flex-1 rounded-full px-6 sm:flex-none" onClick={next} disabled={submit.isPending} data-testid={step === 4 ? "register-submit-button" : "register-next-button"}>
+            <Button className="h-12 flex-1 rounded-full px-6 sm:flex-none" onClick={next} disabled={submit.isPending} data-testid={isLast ? "register-submit-button" : "register-next-button"}>
               {submit.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {step === 4 ? "Submit form" : "Continue"} {!submit.isPending && <ArrowRight className="size-4" />}
+              {isLast ? "Submit form" : "Continue"} {!submit.isPending && <ArrowRight className="size-4" />}
             </Button>
           </div>
         </div>
