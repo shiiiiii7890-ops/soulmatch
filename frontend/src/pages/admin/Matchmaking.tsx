@@ -14,6 +14,7 @@ import { EmailPanel } from "@/components/admin/EmailPanel";
 import { Avatar, EmailBadge, PaymentBadge, ScoreRing } from "@/components/common";
 import { apiDelete, apiGet, apiPost, errMsg } from "@/lib/api";
 import type { Application, AssignedMatch, AssignOut, Candidate, OkOut } from "@/lib/types";
+import { fmtHeight } from "@/lib/height";
 import { cn } from "@/lib/utils";
 
 type Pane = "list" | "profile" | "pool";
@@ -163,7 +164,7 @@ export default function Matchmaking() {
                 <Avatar name={a.full_name} photoId={a.photo_id} size={72} />
                 <div className="min-w-0">
                   <h2 className="text-2xl text-wine-deep" data-testid="mm-selected-name">{a.full_name}</h2>
-                  <p className="text-sm text-ink-muted">{a.age} · {a.gender} · {a.height_cm} cm · {a.college}, {a.course}</p>
+                  <p className="text-sm text-ink-muted">{a.age} · {a.gender} · {fmtHeight(a.height_cm)} · {a.college}, {a.course}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5"><PaymentBadge status={a.payment.status} /><EmailBadge status={a.email_status} /></div>
                 </div>
               </div>

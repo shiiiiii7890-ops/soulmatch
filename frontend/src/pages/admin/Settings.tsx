@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageTitle } from "@/components/admin/AdminLayout";
+import { QuestionEditor } from "@/components/admin/QuestionEditor";
 import { apiGet, apiPost, apiPut, apiUpload, errMsg } from "@/lib/api";
 import type { EndRoundOut, Settings, SettingsIn } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,7 @@ export default function SettingsPage() {
       <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
         <form className="space-y-4 rounded-2xl border border-sand bg-white p-6" onSubmit={(e) => { e.preventDefault(); save.mutate(f); }} data-testid="settings-form">
           <p className="font-semibold text-ink">Payment details</p>
+          <p className="-mt-2 text-xs text-ink-muted">Registration is free for women — payment is only asked from everyone else.</p>
           <div className="space-y-1.5"><Label htmlFor="s-fee">Registration fee (₹)</Label><Input id="s-fee" inputMode="numeric" className="h-11" value={String(f.fee)} onChange={(e) => setF((p) => ({ ...p, fee: Number(e.target.value.replace(/\D/g, "")) || 0 }))} data-testid="settings-fee" /></div>
           <div className="space-y-1.5"><Label htmlFor="s-upi">UPI ID</Label><Input id="s-upi" className="h-11" placeholder="yourname@okaxis" value={f.upi_id} onChange={(e) => setF((p) => ({ ...p, upi_id: e.target.value }))} data-testid="settings-upi_id" /></div>
           <div className="space-y-1.5"><Label htmlFor="s-payee">Payee name</Label><Input id="s-payee" className="h-11" placeholder="SoulMatch" value={f.payee_name} onChange={(e) => setF((p) => ({ ...p, payee_name: e.target.value }))} data-testid="settings-payee_name" /></div>
@@ -80,6 +82,8 @@ export default function SettingsPage() {
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" data-testid="settings-qr-input" onChange={(e) => { const file = e.target.files?.[0]; if (file) qr.mutate(file); e.target.value = ""; }} />
         </div>
       </div>
+
+      <QuestionEditor />
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-bad/30 bg-[#FFF7F8] p-6" data-testid="end-round-card">
         <div className="max-w-xl">
