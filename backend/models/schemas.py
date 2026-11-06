@@ -5,12 +5,13 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
-from lib.options import LIFESTYLES, QUALITIES
 
 Gender = Literal["Male", "Female", "Non-binary", "Other"]
-Personality = Literal["Introvert", "Extrovert", "Ambivert"]
-DatingVibe = Literal["Gen Z", "Old School", "Hopeless Romantic", "Casual & Fun", "Deep Conversations", "Friends First"]
-Intention = Literal["Serious Relationship", "Getting to Know Someone", "Friendship First", "Open to Connections"]
+# Personality / vibe / intention / qualities / lifestyle options are admin-editable, so they are plain strings here
+# and are checked against the current option lists in the /applications route.
+Personality = str
+DatingVibe = str
+Intention = str
 PaymentStatus = Literal["pending", "verified", "rejected"]
 EmailStatus = Literal["no_matches", "pending", "sent"]
 
@@ -52,12 +53,38 @@ class Settings(SettingsIn):
     qr_file_id: Optional[str] = None
 
 
+class QuestionCfg(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+    hint: str = Field(default="", max_length=140)
+    options: list[str] = Field(min_length=2, max_length=40)
+
+    @field_validator("options")
+    @classmethod
+    def _opts(cls, v: list[str]) -> list[str]:
+        cleaned = [x.strip() for x in v if x and x.strip()]
+        if any(len(x) > 40 for x in cleaned):
+            raise ValueError("Each option must be 40 characters or fewer")
+        cleaned = list(dict.fromkeys(cleaned))
+        if len(cleaned) < 2:
+            raise ValueError("Add at least two options")
+        return cleaned
+
+
+class Questions(BaseModel):
+    personality: QuestionCfg
+    qualities: QuestionCfg
+    vibe: QuestionCfg
+    lifestyle: QuestionCfg
+    intention: QuestionCfg
+
+
 class PublicForm(BaseModel):
     open: bool
     fee: int
     upi_id: str
     payee_name: str
     has_qr: bool
+    questions: Questions
 
 
 # ---------- Applications ----------
@@ -75,16 +102,6 @@ class Preferences(BaseModel):
     intentions: list[Intention] = []
     college: str = Field(default="", max_length=100)
     location: str = Field(default="", max_length=100)
-
-    @field_validator("qualities")
-    @classmethod
-    def _q(cls, v: list[str]) -> list[str]:
-        return _check_subset(v, QUALITIES)
-
-    @field_validator("lifestyles")
-    @classmethod
-    def _l(cls, v: list[str]) -> list[str]:
-        return _check_subset(v, LIFESTYLES)
 
     @model_validator(mode="after")
     def _ranges(self):
@@ -109,11 +126,11 @@ class ProfileFields(BaseModel):
     instagram: str
     religion: str = Field(default="", max_length=40)
     share_religion: bool = False
-    personality: Personality
-    qualities: list[str] = Field(min_length=1, max_length=15)
-    dating_vibe: DatingVibe
-    lifestyle: list[str] = Field(min_length=1, max_length=8)
-    intention: Intention
+    personality: str = Field(min_length=1, max_length=40)
+    qualities: list[str] = Field(min_length=1, max_length=40)
+    dating_vibe: str = Field(min_length=1, max_length=40)
+    lifestyle: list[str] = Field(min_length=1, max_length=40)
+    intention: str = Field(min_length=1, max_length=40)
     preferences: Preferences
 
     @field_validator("mobile")
@@ -131,24 +148,21 @@ class ProfileFields(BaseModel):
     def _e(cls, v: str) -> str:
         return v.lower()
 
-    @field_validator("qualities")
-    @classmethod
-    def _q(cls, v: list[str]) -> list[str]:
-        return _check_subset(v, QUALITIES)
-
-    @field_validator("lifestyle")
-    @classmethod
-    def _l(cls, v: list[str]) -> list[str]:
-        return _check_subset(v, LIFESTYLES)
-
 
 class ApplicationIn(ProfileFields):
     photo_id: str
-    utr: str = Field(pattern=r"^[A-Za-z0-9]{6,30}$")
-    screenshot_id: str
+    # Registration is free for women, so payment proof is only required for everyone else.
+    utr: Optional[str] = Field(default=None, pattern=r"^[A-Za-z0-9]{6,30}$")
+    screenshot_id: Optional[str] = None
     consent_accurate: Literal[True]
     consent_matchmaking: Literal[True]
     consent_share_contact: Literal[True]
+
+    @model_validator(mode="after")
+    def _payment_required_unless_female(self):
+        if self.gender != "Female" and (not self.utr or not self.screenshot_id):
+            raise ValueError("Payment proof (UTR and screenshot) is required")
+        return self
 
 
 class Payment(BaseModel):
@@ -173,6 +187,7 @@ class Application(ProfileFields):
 
 class ApplicationCreated(BaseModel):
     app_code: str
+    free_entry: bool = False
 
 
 class PaymentReview(BaseModel):
