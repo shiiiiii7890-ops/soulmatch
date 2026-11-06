@@ -14,11 +14,11 @@ from lib.compat import compatibility
 from lib.db import db
 from lib.email_tpl import build_email
 from lib.service import (
-    assignment_map, email_status, get_app_or_404, get_settings, new_id, now_iso, signature, store_image, to_model,
+    assignment_map, email_status, get_app_or_404, get_questions, get_settings, new_id, now_iso, signature, store_image, to_model,
 )
 from models.schemas import (
     Application, AssignedMatch, AssignIn, AssignOut, Candidate, CompatPart, EmailMarkOut, EmailPreview, EndRoundIn,
-    EndRoundOut, OkOut, PaymentReview, Settings, SettingsIn,
+    EndRoundOut, OkOut, PaymentReview, Questions, Settings, SettingsIn,
 )
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)])
@@ -223,6 +223,24 @@ async def read_settings():
 async def write_settings(body: SettingsIn):
     await db.settings.update_one({"id": "global"}, {"$set": body.model_dump()}, upsert=True)
     return Settings(**await get_settings())
+
+
+@router.get("/questions", response_model=Questions)
+async def read_questions():
+    return await get_questions()
+
+
+@router.put("/questions", response_model=Questions)
+async def write_questions(body: Questions):
+    await db.settings.update_one({"id": "global"}, {"$set": {"questions": body.model_dump()}}, upsert=True)
+    return await get_questions()
+
+
+@router.delete("/questions", response_model=Questions)
+async def reset_questions():
+    """Restore the built-in question wording and options."""
+    await db.settings.update_one({"id": "global"}, {"$unset": {"questions": ""}}, upsert=True)
+    return await get_questions()
 
 
 @router.post("/settings/qr", response_model=Settings)
