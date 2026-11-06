@@ -9,7 +9,8 @@ from bson import Binary
 from fastapi import HTTPException, UploadFile
 
 from lib.db import db
-from models.schemas import Application
+from lib.options import DEFAULT_QUESTIONS, QUESTION_KEYS
+from models.schemas import Application, Questions
 
 MAX_UPLOAD = 5 * 1024 * 1024
 DEFAULT_SETTINGS = {"form_open": False, "fee": 199, "upi_id": "", "payee_name": "SoulMatch", "qr_file_id": None}
@@ -31,6 +32,35 @@ def new_app_code() -> str:
 async def get_settings() -> dict:
     doc = await db.settings.find_one({"id": "global"}, {"_id": 0, "id": 0}) or {}
     return {**DEFAULT_SETTINGS, **{k: v for k, v in doc.items() if k in DEFAULT_SETTINGS}}
+
+
+async def get_questions() -> Questions:
+    """Admin-edited question text/options layered over the built-in defaults."""
+    doc = await db.settings.find_one({"id": "global"}, {"_id": 0, "questions": 1}) or {}
+    saved = doc.get("questions") or {}
+    merged = {}
+    for k in QUESTION_KEYS:
+        base = {**DEFAULT_QUESTIONS[k], "options": list(DEFAULT_QUESTIONS[k]["options"])}
+        merged[k] = {**base, **(saved.get(k) or {})}
+    try:
+        return Questions(**merged)
+    except Exception:  # corrupt saved config must never take the public form down
+        return Questions(**{k: {**DEFAULT_QUESTIONS[k], "options": list(DEFAULT_QUESTIONS[k]["options"])} for k in QUESTION_KEYS})
+
+
+def check_answers(body, q: Questions) -> None:
+    """Server-side check that submitted answers are among the options currently offered."""
+    def bad(label: str, values: list[str], allowed: list[str]) -> None:
+        extra = [v for v in values if v not in allowed]
+        if extra:
+            raise HTTPException(status_code=422, detail=f"Invalid {label}: {', '.join(extra)}. Please refresh the page and try again.")
+
+    p = body.preferences
+    bad("personality", [body.personality] + p.personalities, q.personality.options)
+    bad("qualities", body.qualities + p.qualities, q.qualities.options)
+    bad("dating vibe", [body.dating_vibe] + p.vibes, q.vibe.options)
+    bad("lifestyle", body.lifestyle + p.lifestyles, q.lifestyle.options)
+    bad("relationship type", [body.intention] + p.intentions, q.intention.options)
 
 
 def signature(match_ids: list[str]) -> str:

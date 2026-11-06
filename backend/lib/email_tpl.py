@@ -3,6 +3,14 @@
 from html import escape
 
 
+def fmt_height(cm) -> str:
+    """e.g. 168 -> 5'6" (168 cm)"""
+    if not cm:
+        return ""
+    total_in = round(int(cm) / 2.54)
+    return f"{total_in // 12}'{total_in % 12}\" ({cm} cm)"
+
+
 def ig_url(handle: str) -> str:
     return f"https://instagram.com/{handle.lstrip('@')}"
 
@@ -10,7 +18,7 @@ def ig_url(handle: str) -> str:
 def _rows(m: dict) -> list[tuple[str, str]]:
     rows = [
         ("Age", str(m["age"])),
-        ("Height", f"{m.get('height_cm', '')} cm"),
+        ("Height", fmt_height(m.get("height_cm"))),
         ("Gender", m["gender"]),
         ("University", m["college"]),
         ("Branch / Course", m["course"]),
