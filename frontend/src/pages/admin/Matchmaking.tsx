@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChevronDown, Info, Loader2, Mail, Search, ShieldAlert, X } from "lucide-react";
+import { ChevronDown, Info, Loader2, Search, Share2, ShieldAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { PageTitle } from "@/components/admin/AdminLayout";
 import { useInvalidateApps } from "@/components/admin/ApplicantSheet";
 import { ProfileBlock } from "@/components/admin/Profile";
 import { EmailPanel } from "@/components/admin/EmailPanel";
+import { PosterPanel } from "@/components/admin/PosterPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, EmailBadge, PaymentBadge, ScoreRing } from "@/components/common";
 import { apiDelete, apiGet, apiPost, errMsg } from "@/lib/api";
 import type { Application, AssignedMatch, AssignOut, Candidate, OkOut } from "@/lib/types";
@@ -172,7 +174,7 @@ export default function Matchmaking() {
               <div className="rounded-2xl border border-sand p-4" data-testid="mm-assigned-list">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="font-semibold text-ink">Assigned matches <span className="font-mono text-ink-muted">({assigned.data?.length ?? 0})</span></p>
-                  <Button size="sm" variant="outline" className="rounded-full" disabled={!assigned.data?.length} onClick={() => setEmailOpen(true)} data-testid="mm-preview-email-button"><Mail className="size-3.5" /> Get email to copy</Button>
+                  <Button size="sm" variant="outline" className="rounded-full" disabled={!assigned.data?.length} onClick={() => setEmailOpen(true)} data-testid="mm-share-result-button"><Share2 className="size-3.5" /> Share result</Button>
                 </div>
                 {assigned.data?.length === 0 && <p className="text-xs text-ink-muted">No matches yet — pick from the match pool.</p>}
                 <div className="space-y-1.5">
@@ -224,8 +226,19 @@ export default function Matchmaking() {
 
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl" data-testid="mm-email-dialog">
-          <DialogHeader><DialogTitle className="font-display text-2xl text-wine-deep">Match email · {a?.full_name}</DialogTitle></DialogHeader>
-          {selId && <EmailPanel appId={selId} />}
+          <DialogHeader><DialogTitle className="font-display text-2xl text-wine-deep">Share result · {a?.full_name}</DialogTitle></DialogHeader>
+          <Tabs defaultValue="poster">
+            <TabsList>
+              <TabsTrigger value="poster" data-testid="share-tab-poster">Poster (for DM)</TabsTrigger>
+              <TabsTrigger value="email" data-testid="share-tab-email">Email</TabsTrigger>
+            </TabsList>
+            <TabsContent value="poster" className="pt-3">
+              {emailOpen && a && <PosterPanel person={a} matches={assigned.data ?? []} />}
+            </TabsContent>
+            <TabsContent value="email" className="pt-3">
+              {emailOpen && selId && <EmailPanel appId={selId} />}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
