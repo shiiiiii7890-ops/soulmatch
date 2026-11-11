@@ -37,7 +37,7 @@ def person(i: int, p: tuple, status: str) -> dict:
     return {
         "id": new_id(), "app_code": f"SM-D{i:04d}", "full_name": name, "age": age, "gender": gender, "height_cm": h,
         "mobile": f"98{random.randint(10000000, 99999999)}", "email": f"{handle}@example.com", "photo_id": None,
-        "college": college, "course": course, "city": city, "hometown": home, "instagram": handle, "religion": "",
+        "college": college, "course": course, "year": ["1st Year", "2nd Year", "3rd Year", "4th Year"][i % 4], "city": city, "hometown": home, "instagram": handle, "religion": "",
         "share_religion": False, "personality": pers, "qualities": quals, "dating_vibe": vibe, "lifestyle": life, "intention": intent,
         "preferences": {
             "surprise_me": False, "genders": ["Female"] if gender == "Male" else ["Male"], "age_min": 19, "age_max": 26,
