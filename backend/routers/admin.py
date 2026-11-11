@@ -50,7 +50,7 @@ async def list_applications(f: dict = Depends(filter_args)):
 
 EXPORT_COLS = [
     ("Application ID", "app_code"), ("Name", "full_name"), ("Age", "age"), ("Gender", "gender"), ("Height (cm)", "height_cm"),
-    ("Mobile", "mobile"), ("Email", "email"), ("College", "college"), ("Course", "course"), ("City", "city"),
+    ("Mobile", "mobile"), ("Email", "email"), ("College", "college"), ("Course", "course"), ("Year", "year"), ("City", "city"),
     ("Hometown", "hometown"), ("Instagram", "instagram"), ("Personality", "personality"), ("Qualities", "qualities"),
     ("Dating Vibe", "dating_vibe"), ("Lifestyle", "lifestyle"), ("Intention", "intention"),
     ("Payment Status", "payment_status"), ("UTR", "utr"), ("Matches", "match_count"), ("Email Status", "email_status"),
