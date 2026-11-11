@@ -3,6 +3,7 @@
 import re
 from typing import Literal, Optional
 
+from lib.options import YEARS
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
@@ -121,6 +122,7 @@ class ProfileFields(BaseModel):
     email: EmailStr
     college: str = Field(min_length=1, max_length=100)
     course: str = Field(min_length=1, max_length=100)
+    year: str = Field(default="", max_length=30)  # year of study; blank on older entries
     city: str = Field(min_length=1, max_length=60)
     hometown: str = Field(min_length=1, max_length=80)
     instagram: str
@@ -157,6 +159,13 @@ class ApplicationIn(ProfileFields):
     consent_accurate: Literal[True]
     consent_matchmaking: Literal[True]
     consent_share_contact: Literal[True]
+
+    @model_validator(mode="after")
+    def _year_required(self):
+        # A model-level check (not a field validator) so it also fires when `year` is missing and falls back to its default.
+        if self.year not in YEARS:
+            raise ValueError("Please select your year of study")
+        return self
 
     @model_validator(mode="after")
     def _payment_required_unless_female(self):
