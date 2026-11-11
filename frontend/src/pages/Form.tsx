@@ -13,14 +13,14 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { SimpleSelect, toOpts } from "@/components/SimpleSelect";
 import { apiPost, errMsg } from "@/lib/api";
 import { copyText, usePublicForm } from "@/lib/hooks";
-import { DEFAULT_QUESTIONS, GENDERS, inr } from "@/lib/options";
+import { DEFAULT_QUESTIONS, GENDERS, YEARS, inr } from "@/lib/options";
 import { FEET, HEIGHT_RANGE_OPTIONS, INCHES, cmToFtIn, fmtFtIn, fmtHeight, ftInToCm } from "@/lib/height";
 import type { ApplicationCreated, ApplicationIn, Gender, Preferences } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Draft {
   full_name: string; age: string; gender: string; height_cm: string; mobile: string; email: string;
-  photo_id: string | null; college: string; course: string; city: string; hometown: string; instagram: string;
+  photo_id: string | null; college: string; course: string; year: string; city: string; hometown: string; instagram: string;
   religion: string; share_religion: boolean;
   personality: string; qualities: string[]; dating_vibe: string; lifestyle: string[]; intention: string;
   preferences: Preferences;
@@ -29,7 +29,7 @@ interface Draft {
 }
 
 const EMPTY: Draft = {
-  full_name: "", age: "", gender: "", height_cm: "", mobile: "", email: "", photo_id: null, college: "", course: "",
+  full_name: "", age: "", gender: "", height_cm: "", mobile: "", email: "", photo_id: null, college: "", course: "", year: "",
   city: "", hometown: "", instagram: "", religion: "", share_religion: false,
   personality: "", qualities: [], dating_vibe: "", lifestyle: [], intention: "",
   preferences: {
@@ -69,6 +69,7 @@ function validate(step: StepId, d: Draft): Errors {
     if (!EMAIL_RE.test(d.email.trim())) e.email = "Enter a valid email address";
     if (!d.photo_id) e.photo_id = "Upload a profile photo";
     for (const k of ["college", "course", "city", "hometown"] as const) if (!d[k].trim()) e[k] = "Required";
+    if (!d.year) e.year = "Select your year";
     if (!/^@?[A-Za-z0-9._]{1,30}$/.test(d.instagram.trim())) e.instagram = "Enter a valid Instagram username";
   }
   if (step === "about") {
@@ -222,7 +223,7 @@ export default function Register() {
     submit.mutate({
       ...(isFree ? {} : { utr: d.utr.trim().toUpperCase(), screenshot_id: d.screenshot_id ?? "" }), full_name: d.full_name.trim(), age: Number(d.age), gender: d.gender as Gender,
       height_cm: Number(d.height_cm), mobile: d.mobile.trim(), email: d.email.trim(), photo_id: d.photo_id ?? "",
-      college: d.college.trim(), course: d.course.trim(), city: d.city.trim(), hometown: d.hometown.trim(),
+      college: d.college.trim(), course: d.course.trim(), year: d.year, city: d.city.trim(), hometown: d.hometown.trim(),
       instagram: d.instagram.trim(), religion: d.religion.trim(), share_religion: d.share_religion && !!d.religion.trim(),
       personality: d.personality, qualities: d.qualities, dating_vibe: d.dating_vibe,
       lifestyle: d.lifestyle, intention: d.intention, preferences: d.preferences,
@@ -344,6 +345,9 @@ export default function Register() {
                       </Field>
                       <Field label="Course / Branch" id="course" error={errors.course}>
                         <Input id="course" className="h-11 bg-white" value={d.course} onChange={(e) => set("course", e.target.value)} data-testid="input-course" />
+                      </Field>
+                      <Field label="Year of study" id="year" error={errors.year}>
+                        <SimpleSelect value={d.year} onChange={(v) => set("year", v)} options={toOpts(YEARS)} placeholder="Select year" testId="select-year" className="h-11" />
                       </Field>
                       <Field label="Current city" id="city" error={errors.city}>
                         <Input id="city" className="h-11 bg-white" value={d.city} onChange={(e) => set("city", e.target.value)} data-testid="input-city" />
@@ -480,7 +484,7 @@ export default function Register() {
                   <div className="space-y-4" data-testid="register-step-4">
                     <ReviewBlock title="Basic details" testId="review-basic" onEdit={() => go(0)} rows={[
                       ["Name", d.full_name], ["Age", d.age], ["Gender", d.gender], ["Height", fmtHeight(d.height_cm)],
-                      ["Mobile", d.mobile], ["Email", d.email], ["College", d.college], ["Course", d.course], ["City", d.city],
+                      ["Mobile", d.mobile], ["Email", d.email], ["College", d.college], ["Course", d.course], ["Year", d.year], ["City", d.city],
                       ["Hometown", d.hometown], ["Instagram", d.instagram ? "@" + d.instagram.replace(/^@/, "") : ""],
                       ["Religion", d.religion ? `${d.religion}${d.share_religion ? " (shared with matches)" : " (private)"}` : ""],
                       ["Photo", d.photo_id ? "Uploaded ✓" : ""],
