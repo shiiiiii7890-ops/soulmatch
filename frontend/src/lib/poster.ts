@@ -177,7 +177,7 @@ export async function renderPoster(person: Application, m: Application, index: n
   ctx.fillText(m.full_name, W / 2, 762);
   ctx.font = `500 30px ${SANS}`;
   ctx.fillStyle = C.muted;
-  ctx.fillText([`${m.age} yrs`, fmtFtIn(m.height_cm)].join("   •   "), W / 2, 810);
+  ctx.fillText([`${m.age} yrs`, fmtFtIn(m.height_cm), m.year].filter(Boolean).join("   •   "), W / 2, 810);
 
   // Details panel
   const px = 90, py = 846, pwid = 900, ph = 272, pad = 28;

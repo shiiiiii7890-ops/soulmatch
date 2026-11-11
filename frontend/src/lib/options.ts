@@ -9,6 +9,7 @@ export const DATING_VIBES = ["Gen Z", "Old School", "Hopeless Romantic", "Casual
 export const LIFESTYLES = [
   "Party Lover", "Fitness Enthusiast", "Book Lover", "Traveller", "Movie Buff", "Music Lover", "Gamer", "Food Explorer",
 ];
+export const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Postgraduate", "Passed out"];
 export const INTENTIONS = ["Serious Relationship", "Getting to Know Someone", "Friendship First", "Open to Connections", "Hookup"];
 
 export interface QuestionCfg { title: string; hint: string; options: string[] }

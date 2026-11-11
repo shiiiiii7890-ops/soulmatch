@@ -57,6 +57,7 @@ export interface ProfileFields {
   email: string;
   college: string;
   course: string;
+  year?: string; // year of study (blank on older entries)
   city: string;
   hometown: string;
   instagram: string;
