@@ -27,7 +27,7 @@ export function ProfileBlock({ a, compact }: { a: Application; compact?: boolean
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Row k="Age" v={String(a.age)} /><Row k="Gender" v={a.gender} /><Row k="Height" v={fmtHeight(a.height_cm)} />
           <Row k="Mobile" v={a.mobile} /><Row k="Email" v={a.email} /><Row k="Instagram" v={"@" + a.instagram} />
-          <Row k="College" v={a.college} /><Row k="Course" v={a.course} /><Row k="City" v={a.city} />
+          <Row k="College" v={a.college} /><Row k="Course" v={a.course} /><Row k="Year" v={a.year || "—"} /><Row k="City" v={a.city} />
           <Row k="Hometown" v={a.hometown} /><Row k="Religion" v={a.religion ? `${a.religion}${a.share_religion ? " (shareable)" : " (private)"}` : ""} />
         </dl>
       )}
