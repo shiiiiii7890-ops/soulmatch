@@ -1,6 +1,7 @@
 """Canonical answer options — mirrored by frontend/src/lib/options.ts."""
 
 GENDERS = ["Male", "Female", "Non-binary", "Other"]
+YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Postgraduate", "Other"]
 PERSONALITIES = ["Introvert", "Extrovert", "Ambivert"]
 QUALITIES = [
     "Loyal", "Kind", "Funny", "Humorous", "Ambitious", "Intellectual", "Confident", "Caring",
